@@ -41,7 +41,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-900">熱賣商品專區</h2>
-                    <p class="text-sm text-slate-500">歡迎選購，點擊縮圖可切換查看多張商品圖片。</p>
+                    <p class="text-sm text-slate-500">歡迎選購，點擊圖片可放大查看並左右切換多張大圖。</p>
                 </div>
             </div>
 
@@ -92,9 +92,9 @@
         </div>
     </div>
 
-    <!-- 新增：訂單成立成功通知 Modal (方便複製訂單編號) -->
+    <!-- 訂單成立成功通知 Modal -->
     <div id="success-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5 text-center relative animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5 text-center relative">
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner">
                 <i class="fa-solid fa-check"></i>
             </div>
@@ -103,7 +103,6 @@
                 <p class="text-xs text-slate-500 mt-1">我們已收到您的訂單資料，感謝您的購買！</p>
             </div>
 
-            <!-- 訂單編號與一鍵複製區塊 -->
             <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
                 <div class="text-xs text-slate-500 font-bold">您的訂單編號為</div>
                 <div id="success-order-no" class="text-xl font-mono font-bold text-indigo-600 select-all tracking-wider">ORD-XXXXX</div>
@@ -112,17 +111,41 @@
                 </button>
             </div>
 
-            <!-- LINE 提醒通知 -->
             <div class="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-left text-xs text-emerald-900 space-y-1">
                 <div class="font-bold flex items-center gap-1.5 text-emerald-800">
                     <i class="fa-brands fa-line text-lg text-emerald-600"></i> 【重要步驟】傳送給官方 LINE
                 </div>
-                <p class="leading-relaxed">請複製上方訂單編號，並傳送至我們的官方 LINE 帳號，以利我們迅速為您對帳與回覆後續進度喔！</p>
+                <p class="leading-relaxed">請複製上方訂單編號，並傳送至我們的官方 LINE 帳號，以利我們迅速為您對帳與回覆包裹狀況！</p>
             </div>
 
             <button onclick="closeSuccessModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold transition text-sm cursor-pointer shadow-md">
                 好的，我知道了
             </button>
+        </div>
+    </div>
+
+    <!-- 新增：圖片放大與左右切換懸浮視窗 (Lightbox Modal) -->
+    <div id="image-lightbox-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 md:p-6 select-none">
+        <!-- 關閉按鈕 -->
+        <button onclick="closeImageLightbox()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-slate-800/60 hover:bg-slate-800 w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold transition z-10 cursor-pointer">
+            &times;
+        </button>
+
+        <!-- 左右切換按鈕 -->
+        <button onclick="navigateLightbox(-1)" class="absolute left-2 md:left-6 text-white/90 hover:text-white bg-slate-800/60 hover:bg-slate-800 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-lg md:text-xl font-bold transition z-10 cursor-pointer shadow-lg">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <button onclick="navigateLightbox(1)" class="absolute right-2 md:right-6 text-white/90 hover:text-white bg-slate-800/60 hover:bg-slate-800 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-lg md:text-xl font-bold transition z-10 cursor-pointer shadow-lg">
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+
+        <!-- 主圖預覽區域 -->
+        <div class="max-w-4xl w-full max-h-[85vh] flex flex-col items-center justify-center p-2">
+            <img id="lightbox-img" src="" class="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl border border-slate-700/50 bg-slate-900/40">
+            <div id="lightbox-counter" class="text-white/80 text-xs md:text-sm font-bold mt-3 bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700">
+                1 / 1
+            </div>
         </div>
     </div>
 
@@ -153,7 +176,11 @@
         let shopQuantities = {};
         let currentCategory = 'all';
         let currentCheckoutStep = 1;
-        let createdOrderNo = ''; // 記錄剛建立的訂單號
+        let createdOrderNo = '';
+
+        // 圖片懸浮大圖視窗變數
+        let currentLightboxImages = [];
+        let currentLightboxIndex = 0;
 
         let bankAccounts = [{ name: "中國信託 (822)", account: "1234-5678-9012" }];
         let selectedBankIndex = 0;
@@ -245,6 +272,33 @@
             selectedImageIndexes[productId] = Number(imgIndex);
             renderShopProducts();
         };
+
+        // 開啟懸浮圖片大圖燈箱
+        window.openImageLightbox = function(productId) {
+            const p = products.find(prod => prod.id === productId);
+            if (!p || !p.images || p.images.length === 0) return;
+
+            currentLightboxImages = p.images;
+            currentLightboxIndex = selectedImageIndexes[productId] !== undefined ? selectedImageIndexes[productId] : 0;
+            updateLightboxDisplay();
+
+            document.getElementById('image-lightbox-modal').classList.remove('hidden');
+        };
+
+        window.closeImageLightbox = function() {
+            document.getElementById('image-lightbox-modal').classList.add('hidden');
+        };
+
+        window.navigateLightbox = function(direction) {
+            if (currentLightboxImages.length === 0) return;
+            currentLightboxIndex = (currentLightboxIndex + direction + currentLightboxImages.length) % currentLightboxImages.length;
+            updateLightboxDisplay();
+        };
+
+        function updateLightboxDisplay() {
+            document.getElementById('lightbox-img').src = currentLightboxImages[currentLightboxIndex] || FALLBACK_IMAGE;
+            document.getElementById('lightbox-counter').textContent = (currentLightboxIndex + 1) + ' / ' + currentLightboxImages.length;
+        }
 
         window.changeVariant = function(productId, variantIndex) {
             selectedVariants[productId] = Number(variantIndex);
@@ -342,8 +396,12 @@
 
                 return '<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col justify-between">' +
                     '<div>' +
-                        '<div class="h-52 bg-slate-100 overflow-hidden relative flex items-center justify-center group">' +
-                            '<img src="' + currentImgSrc + '" alt="' + p.name + '" class="w-full h-full object-cover transition-all duration-300">' +
+                        '<!-- 卡片圖片改為 object-contain 並點擊可開啟懸浮視窗 -->' +
+                        '<div onclick="window.openImageLightbox(\'' + p.id + '\')" class="h-56 bg-slate-100 overflow-hidden relative flex items-center justify-center group cursor-zoom-in p-2" title="點擊放大檢視大圖/尺寸表">' +
+                            '<img src="' + currentImgSrc + '" alt="' + p.name + '" class="max-w-full max-h-full object-contain transition-all duration-300 group-hover:scale-105">' +
+                            '<div class="absolute bottom-2 right-2 bg-slate-900/60 text-white text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">' +
+                                '<i class="fa-solid fa-magnifying-glass-plus"></i> 點擊放大' +
+                            '</div>' +
                             (currentVar.stock === 0 ? '<div class="absolute inset-0 bg-slate-900/40 flex items-center justify-center text-white font-bold text-lg">此規格已售完</div>' : '') +
                         '</div>' +
                         thumbnailsHtml +
@@ -493,7 +551,6 @@
                             '<div><strong>收款帳號：</strong> <span id="checkout-bank-account-display" class="font-bold text-indigo-700 text-base">' + defaultBank.account + '</span></div>' +
                             '<div><strong>應付總金額：</strong> <span class="text-rose-600 font-bold">NT$ ' + totalAmount.toLocaleString() + '</span></div>' +
                         '</div>' +
-                        '<!-- 官方 LINE 提醒區塊 -->' +
                         '<div class="bg-amber-50 border border-amber-200 p-2.5 rounded-lg text-amber-800 text-xs leading-relaxed flex gap-2 items-start mt-2">' +
                             '<i class="fa-brands fa-line text-emerald-600 text-base flex-shrink-0 mt-0.5"></i>' +
                             '<div><strong>重要提醒：</strong>訂單送出後，請將「訂單編號」傳送至我們的<strong>官方 LINE</strong>，以方便快速為您對帳與回覆包裹狀況！</div>' +
@@ -531,7 +588,6 @@
             renderCartModalContent();
         };
 
-        // 一鍵複製訂單號
         window.copyOrderNo = function() {
             if (!createdOrderNo) return;
             navigator.clipboard.writeText(createdOrderNo).then(() => {
@@ -598,12 +654,10 @@
                     }
                 }
 
-                // 清空購物車與關閉結帳視窗
                 cart = [];
                 updateCartBadge();
                 closeCartModal();
 
-                // 顯示自訂成功 Modal 與填入訂單號
                 document.getElementById('success-order-no').textContent = orderNo;
                 document.getElementById('success-modal').classList.remove('hidden');
 
