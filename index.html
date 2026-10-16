@@ -215,29 +215,33 @@
             renderShopCategoryTabs();
         });
 
-        Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
-            products = [];
-            snapshot.forEach((d) => {
-                const data = d.data();
-                if (!data.variants || data.variants.length === 0) {
-                    data.variants = [{ name: '標準規格', costJPY: data.costJPY || 0, price: data.price || 0, stock: data.stock || 0 }];
-                }
+Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
+    products = [];
+    snapshot.forEach((d) => {
+        const data = d.data();
+        
+        // 關鍵修改：如果商品狀態為下架（false），前台直接略過不顯示
+        if (data.active === false) return;
 
-                let images = [];
-                if (Array.isArray(data.images) && data.images.length > 0) {
-                    images = data.images.filter(img => img && img.trim() !== "");
-                } else if (data.image && data.image.trim() !== "") {
-                    images = [data.image.trim()];
-                }
-                data.images = images;
+        if (!data.variants || data.variants.length === 0) {
+            data.variants = [{ name: '標準規格', costJPY: data.costJPY || 0, price: data.price || 0, stock: data.stock || 0 }];
+        }
 
-                products.push({ id: d.id, ...data });
-                if (selectedVariants[d.id] === undefined) selectedVariants[d.id] = 0;
-                if (selectedImageIndexes[d.id] === undefined) selectedImageIndexes[d.id] = 0;
-                if (shopQuantities[d.id] === undefined) shopQuantities[d.id] = 1;
-            });
-            renderShopProducts();
-        });
+        let images = [];
+        if (Array.isArray(data.images) && data.images.length > 0) {
+            images = data.images.filter(img => img && img.trim() !== "");
+        } else if (data.image && data.image.trim() !== "") {
+            images = [data.image.trim()];
+        }
+        data.images = images;
+
+        products.push({ id: d.id, ...data });
+        if (selectedVariants[d.id] === undefined) selectedVariants[d.id] = 0;
+        if (selectedImageIndexes[d.id] === undefined) selectedImageIndexes[d.id] = 0;
+        if (shopQuantities[d.id] === undefined) shopQuantities[d.id] = 1;
+    });
+    renderShopProducts();
+});;
 
         Firestore.onSnapshot(Firestore.collection(db, "orders"), (snapshot) => {
             allOrdersCache = [];
