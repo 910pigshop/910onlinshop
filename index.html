@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>線上商店系統</title>
+    <title>910線上商店</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- FontAwesome 圖示 -->
@@ -15,14 +15,14 @@
     <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-40">
         <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <h1 class="text-xl font-bold tracking-wider flex items-center gap-2">
-                <i class="fa-solid fa-store"></i> <span>線上商店系統</span>
+                <i class="fa-solid fa-store"></i> <span>910豬式会社線上商店</span>
             </h1>
             <div class="flex items-center gap-2">
                 <button onclick="switchFrontView('shop')" id="nav-btn-shop" class="text-xs md:text-sm bg-indigo-700 px-3 py-2 rounded-xl transition flex items-center gap-1.5 font-medium cursor-pointer">
                     <i class="fa-solid fa-bag-shopping"></i> 商品選購
                 </button>
                 <button onclick="switchFrontView('query')" id="nav-btn-query" class="text-xs md:text-sm bg-indigo-800/60 hover:bg-indigo-700 px-3 py-2 rounded-xl transition flex items-center gap-1.5 font-medium cursor-pointer">
-                    <i class="fa-solid fa-magnifying-glass"></i> 查訂單與重量
+                    <i class="fa-solid fa-magnifying-glass"></i> 查詢訂單
                 </button>
                 <button onclick="openCartModal()" class="relative bg-indigo-700 hover:bg-indigo-800 text-white px-3 md:px-4 py-2 rounded-xl shadow transition flex items-center gap-2 cursor-pointer">
                     <i class="fa-solid fa-cart-shopping"></i>
@@ -40,8 +40,8 @@
         <div id="front-view-shop" class="space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-900">熱賣商品專區</h2>
-                    <p class="text-sm text-slate-500">歡迎選購，點擊圖片可放大查看並左右切換多張大圖。</p>
+                    <h2 class="text-2xl font-bold text-slate-900">所有商品</h2>
+                    <p class="text-sm text-slate-500">歡迎選購，點擊圖片可放大查看並左右切換。</p>
                 </div>
             </div>
 
@@ -63,12 +63,12 @@
         <div id="front-view-query" class="hidden space-y-6">
             <div class="border-b pb-4">
                 <h2 class="text-2xl font-bold text-slate-900"><i class="fa-solid fa-box-open text-indigo-600"></i> 訂單狀態與包裹重量查詢</h2>
-                <p class="text-sm text-slate-500 mt-1">請輸入您的訂單流水號（如多筆可直接用逗號、空格或換行隔開查詢）：</p>
+                <p class="text-sm text-slate-500 mt-1">請輸入您的訂單編號（如多筆可直接用逗號、空格或換行隔開查詢）：</p>
             </div>
             
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4 max-w-2xl">
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-slate-700">訂單流水號</label>
+                    <label class="block text-sm font-medium text-slate-700">訂單編號</label>
                     <textarea id="query-order-nos" rows="4" placeholder="例如: ORD-20261015-1234, ORD-20261015-5678" class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"></textarea>
                 </div>
                 <button onclick="queryOrders()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium text-sm transition flex items-center gap-2 cursor-pointer">
