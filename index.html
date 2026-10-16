@@ -30,6 +30,10 @@
                 <i class="fa-solid fa-store text-rose-200"></i> <span>910豬式会社線上商店</span>
             </h1>
             <div class="flex items-center gap-2">
+                <!-- 新增：官方 LINE 快速按鈕 -->
+                <a href="https://lin.ee/YAcEFex" target="_blank" rel="noopener noreferrer" class="text-xs md:text-sm bg-[#06C755] hover:bg-[#05b34c] text-white px-3 py-2 rounded-xl transition flex items-center gap-1.5 font-bold shadow-sm cursor-pointer" title="加入官方 LINE 帳號">
+                    <i class="fa-brands fa-line text-base"></i> <span class="hidden sm:inline">官方 LINE</span>
+                </a>
                 <button onclick="switchFrontView('shop')" id="nav-btn-shop" class="text-xs md:text-sm bg-[#8E4455] hover:bg-[#7D3B4A] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 font-medium cursor-pointer shadow-sm">
                     <i class="fa-solid fa-bag-shopping"></i> 商品選購
                 </button>
@@ -53,7 +57,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-stone-200/80 pb-4">
                 <div>
                     <h2 class="text-2xl font-bold text-stone-800 font-serif-jp tracking-wide">所有商品</h2>
-                    <p class="text-xs md:text-sm text-stone-500 mt-1">選購喜歡的商品，點擊圖片可放大查看細節。</p>
+                    <p class="text-xs md:text-sm text-stone-500 mt-1">選購喜歡的日系選物，點擊圖片可放大查看細節與尺寸表。</p>
                 </div>
             </div>
 
@@ -127,15 +131,21 @@
                 </button>
             </div>
 
-            <div class="bg-emerald-50/80 border border-emerald-200/80 p-3.5 rounded-2xl text-left text-xs text-emerald-900 space-y-1">
-                <div class="font-bold flex items-center gap-1.5 text-emerald-800">
-                    <i class="fa-brands fa-line text-lg text-emerald-600"></i> 【重要步驟】傳送給官方 LINE
+            <!-- 新增：點擊可直接開啟 LINE 傳送連結的提醒區塊 -->
+            <div class="bg-emerald-50/90 border border-emerald-200 p-4 rounded-2xl text-left space-y-2">
+                <div class="font-bold flex items-center gap-1.5 text-emerald-900 text-sm">
+                    <i class="fa-brands fa-line text-xl text-[#06C755]"></i> 【關鍵下一步】回報給官方 LINE
                 </div>
-                <p class="leading-relaxed">請複製上方訂單編號，並傳送至我們的官方 LINE 帳號，以利我們迅速為您對帳與回覆包裹狀況！</p>
+                <p class="text-xs text-emerald-800 leading-relaxed">
+                    請複製上方訂單編號，並點擊下方按鈕直接開啟官方 LINE 傳送給我們，即可完成對帳與後續進度追蹤！
+                </p>
+                <a href="https://lin.ee/YAcEFex" target="_blank" rel="noopener noreferrer" class="w-full bg-[#06C755] hover:bg-[#05b34c] text-white py-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm cursor-pointer mt-1">
+                    <i class="fa-brands fa-line text-lg"></i> 開啟官方 LINE 傳送訂單號
+                </a>
             </div>
 
-            <button onclick="closeSuccessModal()" class="w-full bg-[#A85568] hover:bg-[#8E4455] text-white py-3 rounded-xl font-bold transition text-sm cursor-pointer shadow-sm">
-                好的，我知道了
+            <button onclick="closeSuccessModal()" class="w-full bg-stone-200 hover:bg-stone-300 text-stone-700 py-2.5 rounded-xl font-bold transition text-xs cursor-pointer">
+                關閉視窗
             </button>
         </div>
     </div>
@@ -562,7 +572,7 @@
                             '<div class="text-xs"><strong>應付總金額：</strong> <span class="text-[#E06A55] font-bold text-sm">NT$ ' + totalAmount.toLocaleString() + '</span></div>' +
                         '</div>' +
                         '<div class="bg-amber-50/80 border border-amber-200/80 p-2.5 rounded-xl text-amber-900 text-xs leading-relaxed flex gap-2 items-start mt-2">' +
-                            '<i class="fa-brands fa-line text-emerald-600 text-base flex-shrink-0 mt-0.5"></i>' +
+                            '<i class="fa-brands fa-line text-[#06C755] text-base flex-shrink-0 mt-0.5"></i>' +
                             '<div><strong>重要提醒：</strong>訂單送出後，請將「訂單編號」傳送至我們的<strong>官方 LINE</strong>，以方便快速為您對帳與回覆包裹狀況！</div>' +
                         '</div>' +
                     '</div>' +
