@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>910豬式会社線上商店</title>
+    <title>910線上商店</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- FontAwesome 圖示 -->
@@ -30,7 +30,7 @@
                 <i class="fa-solid fa-store text-rose-200"></i> <span>910豬式会社線上商店</span>
             </h1>
             <div class="flex items-center gap-2">
-                <!-- 新增：官方 LINE 快速按鈕 -->
+                <!-- 官方 LINE 快速按鈕 -->
                 <a href="https://lin.ee/YAcEFex" target="_blank" rel="noopener noreferrer" class="text-xs md:text-sm bg-[#06C755] hover:bg-[#05b34c] text-white px-3 py-2 rounded-xl transition flex items-center gap-1.5 font-bold shadow-sm cursor-pointer" title="加入官方 LINE 帳號">
                     <i class="fa-brands fa-line text-base"></i> <span class="hidden sm:inline">官方 LINE</span>
                 </a>
@@ -57,7 +57,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-stone-200/80 pb-4">
                 <div>
                     <h2 class="text-2xl font-bold text-stone-800 font-serif-jp tracking-wide">所有商品</h2>
-                    <p class="text-xs md:text-sm text-stone-500 mt-1">選購喜歡的商品，點擊圖片可放大預覽。</p>
+                    <p class="text-xs md:text-sm text-stone-500 mt-1">選購喜歡的日系選物，點擊圖片可放大查看細節與尺寸表。</p>
                 </div>
             </div>
 
@@ -131,7 +131,6 @@
                 </button>
             </div>
 
-            <!-- 新增：點擊可直接開啟 LINE 傳送連結的提醒區塊 -->
             <div class="bg-emerald-50/90 border border-emerald-200 p-4 rounded-2xl text-left space-y-2">
                 <div class="font-bold flex items-center gap-1.5 text-emerald-900 text-sm">
                     <i class="fa-brands fa-line text-xl text-[#06C755]"></i> 【關鍵下一步】回報給官方 LINE
@@ -215,33 +214,31 @@
             renderShopCategoryTabs();
         });
 
-Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
-    products = [];
-    snapshot.forEach((d) => {
-        const data = d.data();
-        
-        // 關鍵修改：如果商品狀態為下架（false），前台直接略過不顯示
-        if (data.active === false) return;
+        Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
+            products = [];
+            snapshot.forEach((d) => {
+                const data = d.data();
+                if (data.active === false) return; // 下架商品不顯示
 
-        if (!data.variants || data.variants.length === 0) {
-            data.variants = [{ name: '標準規格', costJPY: data.costJPY || 0, price: data.price || 0, stock: data.stock || 0 }];
-        }
+                if (!data.variants || data.variants.length === 0) {
+                    data.variants = [{ name: '標準規格', costJPY: data.costJPY || 0, price: data.price || 0, stock: data.stock || 0 }];
+                }
 
-        let images = [];
-        if (Array.isArray(data.images) && data.images.length > 0) {
-            images = data.images.filter(img => img && img.trim() !== "");
-        } else if (data.image && data.image.trim() !== "") {
-            images = [data.image.trim()];
-        }
-        data.images = images;
+                let images = [];
+                if (Array.isArray(data.images) && data.images.length > 0) {
+                    images = data.images.filter(img => img && img.trim() !== "");
+                } else if (data.image && data.image.trim() !== "") {
+                    images = [data.image.trim()];
+                }
+                data.images = images;
 
-        products.push({ id: d.id, ...data });
-        if (selectedVariants[d.id] === undefined) selectedVariants[d.id] = 0;
-        if (selectedImageIndexes[d.id] === undefined) selectedImageIndexes[d.id] = 0;
-        if (shopQuantities[d.id] === undefined) shopQuantities[d.id] = 1;
-    });
-    renderShopProducts();
-});;
+                products.push({ id: d.id, ...data });
+                if (selectedVariants[d.id] === undefined) selectedVariants[d.id] = 0;
+                if (selectedImageIndexes[d.id] === undefined) selectedImageIndexes[d.id] = 0;
+                if (shopQuantities[d.id] === undefined) shopQuantities[d.id] = 1;
+            });
+            renderShopProducts();
+        });
 
         Firestore.onSnapshot(Firestore.collection(db, "orders"), (snapshot) => {
             allOrdersCache = [];
@@ -325,8 +322,18 @@ Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
             document.getElementById('lightbox-counter').textContent = (currentLightboxIndex + 1) + ' / ' + currentLightboxImages.length;
         }
 
-        window.changeVariant = function(productId, variantIndex) {
-            selectedVariants[productId] = Number(variantIndex);
+        // 雙階選單狀態紀錄
+        if (!window.selectedColorMap) window.selectedColorMap = {};
+        if (!window.selectedSizeMap) window.selectedSizeMap = {};
+
+        window.onColorChange = function(productId, color) {
+            window.selectedColorMap[productId] = color;
+            window.selectedSizeMap[productId] = '';
+            renderShopProducts();
+        };
+
+        window.onSizeChange = function(productId, sizeIndex) {
+            window.selectedSizeMap[productId] = Number(sizeIndex);
             shopQuantities[productId] = 1;
             renderShopProducts();
         };
@@ -334,8 +341,14 @@ Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
         window.changeShopQty = function(productId, delta) {
             const prod = products.find(p => p.id === productId);
             if (!prod) return;
-            const vIdx = selectedVariants[productId] || 0;
-            const currentVar = prod.variants[vIdx];
+            
+            // 找出目前選中的規格
+            let vIdx = selectedVariants[productId] || 0;
+            if (window.selectedSizeMap[productId] !== undefined && window.selectedSizeMap[productId] !== '') {
+                vIdx = window.selectedSizeMap[productId];
+            }
+            const currentVar = prod.variants[vIdx] || prod.variants[0];
+
             let current = shopQuantities[productId] || 1;
             let next = current + delta;
             if (next >= 1 && next <= currentVar.stock) {
@@ -344,10 +357,11 @@ Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
             }
         };
 
-        window.addToCartFromShop = function(productId) {
+        window.addToCartFromShop = function(productId, targetVariantIdx) {
             const prod = products.find(p => p.id === productId);
             if (!prod) return;
-            const vIdx = selectedVariants[productId] || 0;
+            
+            const vIdx = targetVariantIdx !== undefined ? targetVariantIdx : (selectedVariants[productId] || 0);
             const variant = prod.variants[vIdx];
             if (!variant || variant.stock <= 0) return;
 
@@ -403,11 +417,33 @@ Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
                 const images = (p.images && p.images.length > 0) ? p.images : [FALLBACK_IMAGE];
                 const activeImgIdx = selectedImageIndexes[p.id] !== undefined && selectedImageIndexes[p.id] < images.length ? selectedImageIndexes[p.id] : 0;
                 const currentImgSrc = images[activeImgIdx];
-
-                const vIdx = selectedVariants[p.id] || 0;
-                const currentVar = p.variants[vIdx] || p.variants[0];
                 const currentQty = shopQuantities[p.id] || 1;
 
+                // 1. 自動拆解規格中的「顏色」與「尺寸」
+                const parsedVariants = p.variants.map((v, originalIdx) => {
+                    const parts = v.name.trim().split(/[\s/]+/);
+                    const color = parts.length > 1 ? parts[0] : '單一款式';
+                    const size = parts.length > 1 ? parts.slice(1).join(' ') : v.name;
+                    return { ...v, originalIdx, color, size };
+                });
+
+                const availableColors = [...new Set(parsedVariants.map(v => v.color))];
+
+                const selectedColor = window.selectedColorMap[p.id] && availableColors.includes(window.selectedColorMap[p.id]) 
+                    ? window.selectedColorMap[p.id] 
+                    : availableColors[0];
+
+                const sizesForSelectedColor = parsedVariants.filter(v => v.color === selectedColor);
+
+                let selectedVariantIdx = window.selectedSizeMap[p.id];
+                let currentVar = sizesForSelectedColor.find(v => v.originalIdx === selectedVariantIdx);
+                
+                if (!currentVar) {
+                    currentVar = sizesForSelectedColor[0];
+                    selectedVariantIdx = currentVar.originalIdx;
+                }
+
+                // 多圖縮圖列
                 let thumbnailsHtml = '';
                 if (images.length > 1) {
                     thumbnailsHtml = '<div class="flex justify-center items-center gap-1.5 p-2 bg-[#FAF8F5] border-t border-stone-100 overflow-x-auto no-scrollbar">' +
@@ -417,6 +453,43 @@ Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
                             '</button>'
                         ).join('') +
                     '</div>';
+                }
+
+                // 顏色按鈕與尺寸選單
+                let variantSelectionHtml = '';
+                if (availableColors.length > 1 || (availableColors.length === 1 && availableColors[0] !== '單一款式')) {
+                    variantSelectionHtml = 
+                        '<div class="space-y-2">' +
+                            '<div>' +
+                                '<label class="block text-[11px] font-bold text-stone-500 mb-1"><i class="fa-solid fa-palette text-[#A85568]"></i> 選擇顏色：</label>' +
+                                '<div class="flex flex-wrap gap-1.5">' +
+                                    availableColors.map(c => 
+                                        '<button type="button" onclick="window.onColorChange(\'' + p.id + '\', \'' + c + '\')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ' + 
+                                        (c === selectedColor ? 'bg-[#A85568] text-white border-[#A85568] shadow-sm' : 'bg-[#FAF8F5] text-stone-700 border-stone-200 hover:bg-stone-200/60') + '">' +
+                                            c +
+                                        '</button>'
+                                    ).join('') +
+                                '</div>' +
+                            '</div>' +
+                            '<div>' +
+                                '<label class="block text-[11px] font-bold text-stone-500 mb-1"><i class="fa-solid fa-ruler text-[#A85568]"></i> 選擇尺寸 / 規格：</label>' +
+                                '<select onchange="window.onSizeChange(\'' + p.id + '\', this.value)" class="w-full px-2.5 py-1.5 border border-stone-200 rounded-xl text-xs bg-[#FAF8F5] focus:ring-1 focus:ring-[#A85568] focus:outline-none text-stone-700 font-medium">' +
+                                    sizesForSelectedColor.map(v => 
+                                        '<option value="' + v.originalIdx + '" ' + (v.originalIdx === selectedVariantIdx ? 'selected' : '') + '>' + 
+                                            v.size + ' (庫存:' + v.stock + ')' + 
+                                        '</option>'
+                                    ).join('') +
+                                '</select>' +
+                            '</div>' +
+                        '</div>';
+                } else {
+                    variantSelectionHtml = 
+                        '<div>' +
+                            '<label class="block text-[11px] font-bold text-stone-500 mb-1">選擇款式 / 規格：</label>' +
+                            '<select onchange="window.onSizeChange(\'' + p.id + '\', this.value)" class="w-full px-2.5 py-1.5 border border-stone-200 rounded-xl text-xs bg-[#FAF8F5] focus:ring-1 focus:ring-[#A85568] focus:outline-none text-stone-700 font-medium">' +
+                                p.variants.map((v, i) => '<option value="' + i + '" ' + (i === selectedVariantIdx ? 'selected' : '') + '>' + v.name + ' (庫存:' + v.stock + ')' + '</option>').join('') +
+                            '</select>' +
+                        '</div>';
                 }
 
                 return '<div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-stone-200/60 overflow-hidden flex flex-col justify-between group">' +
@@ -432,12 +505,7 @@ Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
                         '<div class="p-4 space-y-2.5">' +
                             '<span class="text-[11px] bg-[#FAF2F3] text-[#A85568] px-2.5 py-0.5 rounded-md font-bold tracking-wide">' + (p.category || '未分類') + '</span>' +
                             '<h3 class="font-bold text-stone-800 text-base mt-1 line-clamp-2 leading-snug">' + p.name + '</h3>' +
-                            '<div>' +
-                                '<label class="block text-[11px] font-bold text-stone-500 mb-1">選擇款式 / 規格：</label>' +
-                                '<select onchange="window.changeVariant(\'' + p.id + '\', this.value)" class="w-full px-2.5 py-1.5 border border-stone-200 rounded-xl text-xs bg-[#FAF8F5] focus:ring-1 focus:ring-[#A85568] focus:border-[#A85568] focus:outline-none text-stone-700 font-medium">' +
-                                    p.variants.map((v, i) => '<option value="' + i + '" ' + (i === vIdx ? 'selected' : '') + '>' + v.name + ' (庫存:' + v.stock + ')</option>').join('') +
-                                '</select>' +
-                            '</div>' +
+                            variantSelectionHtml +
                             '<div class="text-[#E06A55] font-bold text-lg">NT$ ' + currentVar.price.toLocaleString() + '</div>' +
                             '<div class="text-[11px] text-stone-400">規格庫存: ' + currentVar.stock + ' 件</div>' +
                         '</div>' +
@@ -452,7 +520,7 @@ Firestore.onSnapshot(Firestore.collection(db, "products"), (snapshot) => {
                                     '<button onclick="window.changeShopQty(\'' + p.id + '\', 1)" class="w-7 h-7 bg-white border border-stone-200 rounded-lg font-bold text-stone-600 shadow-sm hover:bg-stone-100 cursor-pointer transition">+</button>' +
                                 '</div>' +
                             '</div>' +
-                            '<button onclick="window.addToCartFromShop(\'' + p.id + '\')" class="w-full bg-[#A85568] hover:bg-[#8E4455] text-white py-2.5 rounded-xl text-sm font-bold transition cursor-pointer shadow-sm">加入購物車</button>'
+                            '<button onclick="window.addToCartFromShop(\'' + p.id + '\', ' + selectedVariantIdx + ')" class="w-full bg-[#A85568] hover:bg-[#8E4455] text-white py-2.5 rounded-xl text-sm font-bold transition cursor-pointer shadow-sm">加入購物車</button>'
                             : '<button disabled class="w-full bg-stone-200 text-stone-400 py-2.5 rounded-xl text-sm font-bold cursor-not-allowed">規格售完</button>'
                         ) +
                     '</div>' +
