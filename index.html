@@ -145,7 +145,7 @@
         </div>
     </div>
 
-    <!-- 圖片放大與左右切換懸浮視窗 (Lightbox Modal) -->
+    <!-- 圖片放大與左右切換懸浮視窗 (Lightbox Modal - 已移除價格顯示) -->
     <div id="image-lightbox-modal" class="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 md:p-6 select-none">
         <button onclick="closeImageLightbox()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold transition z-10 cursor-pointer">
             &times;
@@ -160,13 +160,12 @@
         </button>
 
         <div class="max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center p-2 space-y-3">
-            <img id="lightbox-img" src="" class="max-w-full max-h-[65vh] object-contain rounded-2xl shadow-2xl bg-stone-900/60 p-1 border border-white/10">
+            <img id="lightbox-img" src="" class="max-w-full max-h-[68vh] object-contain rounded-2xl shadow-2xl bg-stone-900/60 p-1 border border-white/10">
             
-            <!-- 燈箱下方顯示：價格、頁數、商品說明 -->
+            <!-- 燈箱下方：僅保留商品名稱、說明與頁數 -->
             <div class="w-full max-w-xl bg-stone-900/90 border border-white/15 p-3.5 rounded-2xl text-center space-y-2 backdrop-blur-md shadow-2xl">
-                <div id="lightbox-title-price" class="text-white font-bold text-base flex justify-center items-center gap-3 flex-wrap">
+                <div class="text-white font-bold text-base">
                     <span id="lightbox-prod-name" class="text-stone-200">商品名稱</span>
-                    <span id="lightbox-prod-price" class="text-[#E06A55] font-black text-lg bg-white/10 px-3 py-0.5 rounded-xl border border-white/10">NT$ --</span>
                 </div>
                 <div id="lightbox-prod-desc" class="text-xs text-stone-300 max-h-24 overflow-y-auto leading-relaxed px-2 text-left bg-stone-950/40 p-2 rounded-xl border border-white/5 hidden"></div>
                 <div id="lightbox-counter" class="text-stone-400 text-[11px] font-bold">1 / 1</div>
@@ -206,7 +205,6 @@
         let currentLightboxImages = [];
         let currentLightboxIndex = 0;
         let currentLightboxProduct = null;
-        let currentLightboxVariantPrice = 0;
 
         let bankAccounts = [{ name: "中國信託 (822)", account: "1234-5678-9012" }];
         let selectedBankIndex = 0;
@@ -301,14 +299,13 @@
             renderShopProducts();
         };
 
-        window.openImageLightbox = function(productId, currentVariantPrice) {
+        window.openImageLightbox = function(productId) {
             const p = products.find(prod => prod.id === productId);
             if (!p || !p.images || p.images.length === 0) return;
 
             currentLightboxProduct = p;
             currentLightboxImages = p.images;
             currentLightboxIndex = selectedImageIndexes[productId] !== undefined ? selectedImageIndexes[productId] : 0;
-            currentLightboxVariantPrice = currentVariantPrice || (p.variants && p.variants[0] ? p.variants[0].price : 0);
 
             updateLightboxDisplay();
             document.getElementById('image-lightbox-modal').classList.remove('hidden');
@@ -330,7 +327,6 @@
 
             if (currentLightboxProduct) {
                 document.getElementById('lightbox-prod-name').textContent = currentLightboxProduct.name;
-                document.getElementById('lightbox-prod-price').textContent = 'NT$ ' + currentLightboxVariantPrice.toLocaleString();
 
                 const descEl = document.getElementById('lightbox-prod-desc');
                 if (currentLightboxProduct.description && currentLightboxProduct.description.trim() !== '') {
@@ -345,17 +341,10 @@
         if (!window.selectedColorMap) window.selectedColorMap = {};
         if (!window.selectedSizeMap) window.selectedSizeMap = {};
 
-        window.onColorChange = function(productId, color, colorIdx) {
+        // 當買家點擊顏色時：只記錄選中顏色，不強制切換圖片
+        window.onColorChange = function(productId, color) {
             window.selectedColorMap[productId] = color;
             window.selectedSizeMap[productId] = '';
-
-            const p = products.find(prod => prod.id === productId);
-            if (p && p.images && p.images.length > 0) {
-                if (colorIdx !== undefined && colorIdx < p.images.length) {
-                    selectedImageIndexes[productId] = colorIdx;
-                }
-            }
-
             renderShopProducts();
         };
 
@@ -486,8 +475,8 @@
                             '<div>' +
                                 '<label class="block text-[11px] font-bold text-stone-500 mb-1"><i class="fa-solid fa-palette text-[#A85568]"></i> 選擇顏色：</label>' +
                                 '<div class="flex flex-wrap gap-1.5">' +
-                                    availableColors.map((c, cIdx) => 
-                                        '<button type="button" onclick="window.onColorChange(\'' + p.id + '\', \'' + c + '\', ' + cIdx + ')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ' + 
+                                    availableColors.map(c => 
+                                        '<button type="button" onclick="window.onColorChange(\'' + p.id + '\', \'' + c + '\')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ' + 
                                         (c === selectedColor ? 'bg-[#A85568] text-white border-[#A85568] shadow-sm' : 'bg-[#FAF8F5] text-stone-700 border-stone-200 hover:bg-stone-200/60') + '">' +
                                             c +
                                         '</button>'
@@ -515,12 +504,11 @@
                         '</div>';
                 }
 
-                // 備註說明區塊 HTML
                 const descHtml = p.description ? '<div class="text-xs text-stone-500 bg-[#FAF8F5] p-2.5 rounded-xl border border-stone-200/60 leading-relaxed line-clamp-3">' + p.description + '</div>' : '';
 
                 return '<div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-stone-200/60 overflow-hidden flex flex-col justify-between group">' +
                     '<div>' +
-                        '<div onclick="window.openImageLightbox(\'' + p.id + '\', ' + currentVar.price + ')" class="h-56 bg-[#FAF8F5] overflow-hidden relative flex items-center justify-center cursor-zoom-in p-2" title="點擊放大檢視大圖/尺寸表">' +
+                        '<div onclick="window.openImageLightbox(\'' + p.id + '\')" class="h-56 bg-[#FAF8F5] overflow-hidden relative flex items-center justify-center cursor-zoom-in p-2" title="點擊放大檢視大圖/尺寸表">' +
                             '<img src="' + currentImgSrc + '" alt="' + p.name + '" class="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105">' +
                             '<div class="absolute bottom-2 right-2 bg-stone-900/50 text-white text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 opacity-75 group-hover:opacity-100 transition">' +
                                 '<i class="fa-solid fa-magnifying-glass-plus"></i> 點擊放大' +
